@@ -4,6 +4,43 @@ Custom Claude Code skills for knowledge-driven development. Each skill is a slas
 
 ---
 
+## Installation
+
+Install all skills into your Claude Code environment:
+
+```bash
+npx skills add estines/skills
+```
+
+Or install individual skills:
+
+```bash
+npx skills add estines/skills/kb-init
+npx skills add estines/skills/brief
+npx skills add estines/skills/set-goal
+npx skills add estines/skills/breakdown
+npx skills add estines/skills/burn
+npx skills add estines/skills/kb-update
+```
+
+After installing, the slash commands are immediately available in any Claude Code session.
+
+### Automation Script
+
+The `run-tasks.sh` script runs all open tasks for a goal autonomously. Install it separately via curl:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/estines/skills/main/run-tasks.sh -o run-tasks.sh && chmod +x run-tasks.sh
+```
+
+Usage:
+
+```bash
+./run-tasks.sh GOAL-0001
+```
+
+---
+
 ## The Workflow
 
 ```
