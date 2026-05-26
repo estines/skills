@@ -1,7 +1,7 @@
 ---
-name: knowledge-init
-description: Scaffold a knowledge-base/ directory, then explore and document the current codebase architecture, structure, naming conventions, and key decisions as ADRs. Use when the user wants to initialise a new project's knowledge base, mentions "knowledge-init", or asks to set up project documentation structure.
-trigger: /knowledge-init
+name: kb-init
+description: Scaffold a knowledge-base/ directory, then explore and document the current codebase architecture, structure, naming conventions, and key decisions as ADRs. Use when the user wants to initialise a new project's knowledge base, mentions "kb-init", or asks to set up project documentation structure.
+trigger: /kb-init
 ---
 
 # Knowledge Base Init

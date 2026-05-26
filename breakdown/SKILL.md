@@ -1,7 +1,7 @@
 ---
-name: goal-breakdown
-description: Break a goal into vertical-slice tasks with Fibonacci story point estimates. Checks ADRs, domain language, and user rules before decomposing. Use when the user wants to create tasks from a goal, mentions "goal-breakdown", or types /goal-breakdown.
-trigger: /goal-breakdown
+name: breakdown
+description: Break a goal into vertical-slice tasks with Fibonacci story point estimates. Checks ADRs, domain language, and user rules before decomposing. Use when the user wants to create tasks from a goal, mentions "breakdown", or types /breakdown.
+trigger: /breakdown
 argument-hint: "[optional: GOAL-NNNN]"
 ---
 

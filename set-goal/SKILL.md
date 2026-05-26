@@ -102,4 +102,4 @@ See [GOAL-FORMAT.md](../agents/GOAL-FORMAT.md) for authoring guidance.
 
 ## Phase 4 — Close
 
-Tell the user the file path written. Ask if they want to break this goal into tasks now. If yes, use [TASK-FORMAT.md](../knowledge-init/TASK-FORMAT.md) to create tasks and populate the `## Tasks` section of the goal file with `TASK-NNNN` references.
+Tell the user the file path written. Ask if they want to break this goal into tasks now. If yes, use [TASK-FORMAT.md](../kb-init/TASK-FORMAT.md) to create tasks and populate the `## Tasks` section of the goal file with `TASK-NNNN` references.
