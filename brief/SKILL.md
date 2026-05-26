@@ -1,6 +1,6 @@
 ---
 name: brief
-description: Grilling session that challenges your plan against the knowledge-base — domain glossary, architecture, and ADRs created by /knowledge-init. Sharpens terminology and updates knowledge-base/agents/CONTEXT.md and knowledge-base/adr/ inline as decisions crystallise. Use when user wants to stress-test a plan against their project's documented knowledge base.
+description: Grilling session that challenges your plan against the knowledge-base — domain glossary, architecture, and ADRs created by /kb-init. Sharpens terminology and updates knowledge-base/agents/CONTEXT.md and knowledge-base/adr/ inline as decisions crystallise. Use when user wants to stress-test a plan against their project's documented knowledge base.
 trigger: /brief
 ---
 
@@ -18,7 +18,7 @@ If a question can be answered by exploring the codebase or the knowledge-base, e
 
 ## Prerequisites
 
-This skill requires a `knowledge-base/` directory initialised by `/knowledge-init`. If it doesn't exist, stop and tell the user to run `/knowledge-init` first.
+This skill requires a `knowledge-base/` directory initialised by `/kb-init`. If it doesn't exist, stop and tell the user to run `/kb-init` first.
 
 ## Knowledge base awareness
 
@@ -42,7 +42,7 @@ When the user uses a term that conflicts with the existing language in `knowledg
 
 When the user's plan touches structure, layering, tech-stack, or boundaries, cross-reference against `knowledge-base/agents/ARCHITECTURE.md`. Surface contradictions: "ARCHITECTURE.md shows no layering pattern, but you're proposing a new service layer — is that a deliberate change?"
 
-Do NOT update `knowledge-base/agents/ARCHITECTURE.md`. That file is owned by `/knowledge-init`. Flag structural changes as follow-up tasks instead.
+Do NOT update `knowledge-base/agents/ARCHITECTURE.md`. That file is owned by `/kb-init`. Flag structural changes as follow-up tasks instead.
 
 ### Challenge against existing ADRs
 
