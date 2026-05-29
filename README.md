@@ -1,6 +1,6 @@
 # Skills — Development Workflow
 
-Custom Claude Code skills for knowledge-driven development. Each skill is a slash command that handles one phase of the cycle: understand → plan → execute.
+Custom Claude Code skills for knowledge-driven development. Two independent systems: a **goals and task execution flow** (`.goals/`) and a **project documentation tool** (`knowledge-base/`).
 
 ---
 
@@ -15,11 +15,13 @@ npx skills add estines/skills
 Or install individual skills:
 
 ```bash
-npx skills add estines/skills/kb-init
-npx skills add estines/skills/brief
+npx skills add estines/skills/goals-init
 npx skills add estines/skills/set-goal
+npx skills add estines/skills/brief
 npx skills add estines/skills/breakdown
+npx skills add estines/skills/task-breakdown
 npx skills add estines/skills/burn
+npx skills add estines/skills/kb-init
 npx skills add estines/skills/kb-update
 ```
 
@@ -41,47 +43,38 @@ Usage:
 
 ---
 
-## The Workflow
+## System 1 — Goals & Task Execution
+
+Plan and implement features using goals, tasks, and TDD.
 
 ```
-/kb-init  →  /brief  →  /set-goal  →  /breakdown  →  /burn
-    ↑                                                     |
-    └──────────────── /kb-update ◄────────────────────────┘
+/goals-init  →  /set-goal  →  /brief  →  /breakdown  →  /burn
+                                                ↓
+                                        /task-breakdown
+                                    (for 8+ point tasks)
 ```
+
+All state lives in `.goals/` at the project root.
 
 ---
 
-## Skills
+### `/goals-init` — Set Up the Goals Directory
 
-### `/kb-init` — Initialize the Knowledge Base
+**When:** Once per project, before using any other goals-flow skill.
 
-**When:** First time setting up a project, or onboarding to an unfamiliar codebase.
-
-Scaffolds `knowledge-base/` and then explores the codebase to produce:
-- `knowledge-base/agents/CONTEXT.md` — domain glossary
-- `knowledge-base/agents/ARCHITECTURE.md` — tech stack and structure
-- `knowledge-base/adr/` — architecture decision records
+Scaffolds `.goals/`, wires `@.goals/README.md` into `CLAUDE.md`, and adds `.goals/skills/` to `.gitignore`.
 
 ```
-/kb-init
+/goals-init
 ```
 
-After this runs, the other skills have the context they need to do their jobs well.
-
----
-
-### `/brief` — Stress-Test a Plan
-
-**When:** Before writing code. You have an idea or plan; you want to challenge it.
-
-Runs a grilling session against the knowledge base — checks your plan against the glossary, existing ADRs, and architecture docs. Sharpens fuzzy language, surfaces contradictions, and updates `CONTEXT.md` and `knowledge-base/adr/` as decisions crystallise.
-
+Output:
 ```
-/brief
-/brief Add a caching layer to the API
+.goals/
+  README.md
+  adr/
+  skills/
 ```
-
-Requires `knowledge-base/` (run `/kb-init` first).
 
 ---
 
@@ -89,43 +82,86 @@ Requires `knowledge-base/` (run `/kb-init` first).
 
 **When:** You know what you want to build. Capture it as a durable, structured goal.
 
-Extracts a Goal from the current conversation, refines it into title + description + why + acceptance criteria, confirms with you, then writes it to `knowledge-base/goals/`.
+Extracts a goal from the current conversation, refines it into title + description + why + acceptance criteria, confirms with you, then writes it to `.goals/`.
 
 ```
 /set-goal
 /set-goal Support CSV export for all reports
 ```
 
-Output: `knowledge-base/goals/GOAL-NNNN-slug.md`
+Output:
+```
+.goals/GOAL-NNNN-slug/
+  GOAL.md      — title, description, why, acceptance criteria, task references
+  CONTEXT.md   — per-goal glossary and resolved decisions (updated by /brief)
+```
+
+---
+
+### `/brief` — Stress-Test a Plan Against a Goal
+
+**When:** Before writing code. You have an idea or plan; you want to challenge it against the goal's context.
+
+Runs a grilling session scoped to a specific goal — checks your plan against the goal's glossary (`.goals/GOAL-NNNN-slug/CONTEXT.md`) and existing ADRs (`.goals/adr/`). Sharpens fuzzy language, surfaces contradictions, and updates `CONTEXT.md` and `.goals/adr/` as decisions crystallise.
+
+```
+/brief
+/brief GOAL-0003
+```
+
+Requires a goal directory (run `/set-goal` first).
 
 ---
 
 ### `/breakdown` — Decompose a Goal into Tasks
 
-**When:** A Goal exists and you're ready to plan the work.
+**When:** A goal exists and you're ready to plan the work.
 
-Reads the Goal's acceptance criteria, checks ADRs and domain language for constraints, then decomposes into vertical-slice Tasks with Fibonacci story point estimates. Confirms the full breakdown before writing.
+Reads the goal's acceptance criteria, checks `.goals/adr/` and the goal's `CONTEXT.md` for constraints, then decomposes into vertical-slice tasks with Fibonacci story point estimates. Confirms the full breakdown before writing. Tasks estimated at 8+ points are flagged for `/task-breakdown`.
 
 ```
 /breakdown
 /breakdown GOAL-0003
 ```
 
-Output: `knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-NNNN-slug.md` per task.
+Output: `.goals/GOAL-NNNN-slug/tasks/TASK-NNNN-slug.md` per task.
 
 Each task is independently reviewable and delivers an observable, testable outcome.
 
 ---
 
+### `/task-breakdown` — Split a Large Task into Sub-tasks
+
+**When:** A task is 8+ story points and too large to deliver cleanly in one TDD loop.
+
+Reads the parent task file, decomposes it into sub-tasks of 1–3 points each, converts the parent task to a directory form, and writes sub-tasks under `subtasks/`.
+
+```
+/task-breakdown
+/task-breakdown TASK-0003
+```
+
+Output:
+```
+.goals/GOAL-NNNN-slug/tasks/TASK-NNNN-slug/
+  TASK.md
+  subtasks/
+    STASK-0001-slug.md
+    STASK-0002-slug.md
+```
+
+---
+
 ### `/burn` — Execute a Task with TDD
 
-**When:** A Task exists and you're ready to implement.
+**When:** A task (or sub-task) exists and you're ready to implement.
 
-Reads the Task's acceptance criteria, derives a test plan (happy path + edge cases + failure cases), confirms the full plan upfront, then runs strict red-green-refactor — one test at a time.
+Reads the task's acceptance criteria, derives a test plan (happy path + edge cases + failure cases), confirms the full plan upfront, then runs strict red-green-refactor — one test at a time. Handles both flat task files and directory-form tasks with sub-tasks.
 
 ```
 /burn
 /burn TASK-0001
+/burn STASK-0002
 ```
 
 Loop:
@@ -137,68 +173,115 @@ Loop:
 
 ---
 
-### `/kb-update` — Commit Decisions to the Knowledge Base
+## System 2 — Project Documentation
 
-**When:** After a grilling session, design review, or any conversation where architectural or domain decisions were reached.
-
-Scans the conversation for ADR-worthy decisions and domain term changes, previews each proposed update, then writes confirmed changes to `knowledge-base/adr/`, `CONTEXT.md`, and `ARCHITECTURE.md`.
+Scaffold and maintain a `knowledge-base/` directory with project documentation. Independent of the goals flow.
 
 ```
-/kb-update
+/kb-init  →  /kb-update
 ```
 
 ---
 
-## Typical Session
+### `/kb-init` — Initialize the Knowledge Base
 
-### Starting a new project
+**When:** First time setting up project documentation, or onboarding to an unfamiliar codebase.
+
+Detects the project language/framework, scaffolds `knowledge-base/` with documentation templates, estimates fill scope, then populates each section by reading the codebase.
 
 ```
-/kb-init          ← scaffold knowledge-base/, document architecture
-/brief            ← grill yourself on the first plan
-/kb-update        ← commit decisions from the grilling session
+/kb-init
+```
+
+Output:
+```
+knowledge-base/
+  Product Overview.md
+  Development/
+    Technology Stack/Technology Stack.md
+    Developer Guide/
+      API.md
+      Debugging.md
+      Guideline.md
+      Prerequisites.md
+      Testing.md
+      Workflow.md
+    Technical Debt/Technical Debt List.md
+```
+
+---
+
+### `/kb-update` — Fill or Refresh a Knowledge Base Section
+
+**When:** After `/kb-init`, to fill deferred sections or refresh a specific doc with latest codebase state.
+
+With no arguments, surfaces all unfilled `knowledge-base/` sections. With `--section`, re-scans the codebase to fill or refresh a specific document (archiving the previous version).
+
+```
+/kb-update
+/kb-update --section developer-guide/api
+/kb-update --section technical-debt
+```
+
+Valid targets: `product-overview`, `technology-stack`, `technical-debt`, `developer-guide`, `developer-guide/api`, `developer-guide/guideline`, `developer-guide/prerequisites`, `developer-guide/testing`, `developer-guide/debugging`, `developer-guide/workflow`.
+
+---
+
+## Typical Sessions
+
+### Starting work on a new feature
+
+```
+/goals-init       ← one-time per project
 /set-goal         ← record what you're building
+/brief GOAL-0001  ← grill the plan, sharpen terminology
 /breakdown        ← decompose into tasks
-/burn TASK-0001   ← implement first task with TDD
+/burn TASK-0001   ← implement with TDD
 /burn TASK-0002
 …
 ```
 
-### Picking up existing work
+### Resuming existing work
 
 ```
-/brief            ← re-ground before starting something new
-/set-goal         ← if the work warrants a new goal
-/breakdown        ← decompose the goal
-/burn TASK-NNNN   ← implement
+/brief GOAL-0001  ← re-ground before continuing
+/burn TASK-NNNN   ← pick up the next open task
 ```
 
-### After a long design conversation
+### A large task needs splitting
 
 ```
-/kb-update        ← commit any decisions reached to the knowledge base
+/task-breakdown TASK-0003   ← split into sub-tasks
+/burn STASK-0001            ← implement sub-task by sub-task
+/burn STASK-0002
+```
+
+### Documenting a codebase
+
+```
+/kb-init                              ← scaffold and fill knowledge-base/
+/kb-update --section technical-debt  ← fill deferred sections later
 ```
 
 ---
 
-## Knowledge Base Layout
+## Goals Directory Layout
 
 ```
-knowledge-base/
-  README.md
-  agents/
-    CONTEXT.md          ← domain glossary (owned by /brief, updated by /kb-update)
-    ARCHITECTURE.md     ← tech stack and structure (owned by /kb-init)
+.goals/
   adr/
-    0001-slug.md        ← architecture decision records
-    0002-slug.md
-  goals/
-    GOAL-0001-slug/
-      GOAL.md
-      tasks/
-        TASK-0001-slug.md
-        TASK-0002-slug.md
-    GOAL-0002-slug.md   ← flat file before /breakdown runs
+    0001-slug.md        ← project-local Architecture Decision Records
+  skills/               ← reusable task-execution skills (git-ignored)
+  GOAL-0001-slug/
+    GOAL.md             ← title, description, why, acceptance criteria
+    CONTEXT.md          ← per-goal glossary and resolved decisions
+    tasks/
+      TASK-0001-slug.md                         ← flat task file
+      TASK-0002-slug/                           ← directory form (after /task-breakdown)
+        TASK.md
+        subtasks/
+          STASK-0001-slug.md
+          STASK-0002-slug.md
 ```
 
 ---
@@ -207,10 +290,10 @@ knowledge-base/
 
 | Term | Meaning |
 |------|---------|
-| **Goal** | A high-level objective with acceptance criteria. Lives in `knowledge-base/goals/`. |
-| **Task** | A vertical-slice unit of work derived from a Goal. Has its own criteria and story point estimate. |
-| **Acceptance Criterion** | An observable, testable outcome that defines when a Goal or Task is complete. |
-| **Test Plan** | The full ordered list of test cases for a Task, confirmed before the TDD loop begins. |
-| **ADR** | Architecture Decision Record — a short doc capturing a hard-to-reverse, non-obvious decision. |
-
-Full glossary: `knowledge-base/agents/CONTEXT.md`
+| **Goal** | A high-level objective with acceptance criteria. Lives in `.goals/GOAL-NNNN-slug/`. |
+| **Task** | A vertical-slice unit of work derived from a goal. Has its own criteria and story point estimate. |
+| **Sub-task** | A 1–3 point slice of a large task, created by `/task-breakdown`. |
+| **CONTEXT.md** | Per-goal glossary of canonical terms and resolved decisions. Updated by `/brief`. |
+| **ADR** | Architecture Decision Record — a short doc capturing a hard-to-reverse, non-obvious decision. Lives in `.goals/adr/`. |
+| **Acceptance Criterion** | An observable, testable outcome that defines when a goal or task is complete. |
+| **Test Plan** | The full ordered list of test cases for a task, confirmed before the TDD loop begins. |
