@@ -44,7 +44,6 @@ Using the goal's acceptance criteria as the decomposition target, produce a set 
 
 - Each task is a **vertical slice** — it delivers an observable, testable outcome end-to-end (not a layer, not a subtask)
 - Each task is independently reviewable and can receive feedback on its own
-- Tasks are ordered by dependency (earlier tasks unblock later ones)
 - A goal typically produces 2–8 tasks; if more than 8 are needed, note that the goal may need splitting
 
 Assign a **Fibonacci story point estimate** to each task:
@@ -57,6 +56,19 @@ Assign a **Fibonacci story point estimate** to each task:
 | 5 | Large — non-trivial, some uncertainty |
 | 8 | Very large — significant uncertainty; consider splitting |
 | 13 | Too big — must be split before starting |
+
+### Dependency analysis
+
+After drafting all tasks, infer dependencies by examining what each task **produces** and what each task **needs**. A task B is blocked by task A if B's outcome requires an artifact, state, or behaviour that A delivers.
+
+Assign each task a **sequence number**:
+- **Sequence 1** — no dependencies; can start immediately
+- **Sequence N** — depends on one or more tasks at sequence N-1 (or lower)
+- Tasks with identical blocker sets share the same sequence number and can run in parallel
+
+**Circular dependency rule:** If a circular dependency is detected, restructure the breakdown (split or reorder tasks) until no cycles exist. Never present a circular dependency to the user.
+
+Order tasks for writing by sequence number (sequence 1 first), then within the same sequence by logical order.
 
 ---
 
@@ -73,15 +85,19 @@ Relevant constraints found:
 
 Proposed tasks:
 
-| # | Title | Story Points | Vertical slice delivers… |
-|---|-------|-------------|--------------------------|
-| TASK-0001 | {title} | {pts} | {one-line outcome} |
-| TASK-0002 | {title} | {pts} | {one-line outcome} |
-…
+| # | Title | Points | Sequence | Blocked by |
+|---|-------|--------|----------|------------|
+| — Sequence 1 — |
+| TASK-0001 | {title} | {pts} | 1 | — |
+| — Sequence 2 — |
+| TASK-0002 | {title} | {pts} | 2 | TASK-0001 |
+| TASK-0003 | {title} | {pts} | 2 | TASK-0001 |
+| — Sequence 3 — |
+| TASK-0004 | {title} | {pts} | 3 | TASK-0002, TASK-0003 |
 
 Total: {N} tasks, {sum} points
 
-Adjust any titles, points, order, or split/merge tasks before I write the files.
+Adjust any titles, points, order, dependencies, or split/merge tasks before I write the files.
 ```
 
 Wait for the user to confirm or correct. Apply corrections. Re-present only if changes are significant.
@@ -120,6 +136,7 @@ Scan `knowledge-base/goals/GOAL-NNNN-slug/tasks/` for the highest existing `TASK
 status: open
 story_points: {N}
 goal: GOAL-{NNNN}
+blocked_by: [TASK-{NNNN}, TASK-{NNNN}]   # omit this line entirely for sequence-1 tasks
 ---
 
 # {Task title}
@@ -166,5 +183,7 @@ List every file written or updated. Tell the user:
 Created {N} tasks under knowledge-base/goals/GOAL-NNNN-slug/tasks/
 Updated GOAL.md with task references.
 
-Pick up TASK-0001 to start: knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-0001-slug.md
+Pick up any Sequence 1 task to start:
+- knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-0001-slug.md
+- knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-0002-slug.md  (if also Sequence 1)
 ```
