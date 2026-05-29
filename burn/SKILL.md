@@ -1,6 +1,6 @@
 ---
 name: burn
-description: Execute a task from knowledge-base/goals/ using strict TDD red-green-refactor. Derives test cases from the task's acceptance criteria, confirms the full test plan upfront, then runs one test at a time — write test → red → implement → green → refactor → next test. Use when the user wants to implement a task with TDD, mentions "burn", or types /burn.
+description: Execute a task from .goals/ using strict TDD red-green-refactor. Derives test cases from the task's acceptance criteria, confirms the full test plan upfront, then runs one test at a time — write test → red → implement → green → refactor → next test. Use when the user wants to implement a task with TDD, mentions "burn", or types /burn.
 trigger: /burn
 argument-hint: "[optional: TASK-NNNN]"
 ---
@@ -20,9 +20,19 @@ If no argument was passed:
 - If exactly one task is unambiguous, use it
 - If ambiguous or none found, ask: "Which task should I execute? (e.g. TASK-0001)"
 
-Locate the task file at `knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-NNNN-slug.md`. Read it fully — title, summary, acceptance criteria, notes, and goal reference.
+Locate the task file at `.goals/GOAL-NNNN-slug/tasks/TASK-NNNN-slug.md`. Read it fully — title, summary, acceptance criteria, notes, goal reference, and `skills:` frontmatter.
 
-Also read the parent goal file (`knowledge-base/goals/GOAL-NNNN-slug/GOAL.md`) for additional context.
+Also read:
+- **`.goals/GOAL-NNNN-slug/GOAL.md`** — parent goal context
+- **`.goals/GOAL-NNNN-slug/CONTEXT.md`** — agent steering context: canonical terms, resolved decisions, and constraints for this goal. Apply this language throughout the session.
+
+### Load task skills
+
+If the task frontmatter contains a `skills:` list, load each referenced skill before proceeding:
+
+- For each slug in `skills:`, check `.goals/skills/{slug}.md` and read it if it exists
+- If a skill file contains full instructions, follow those instructions in place of or in addition to the default phases below
+- Skills not found in `.goals/skills/` are silently ignored (the slug may refer to an installed global skill — proceed with default behaviour)
 
 ---
 

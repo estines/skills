@@ -1,13 +1,13 @@
 ---
 name: set-goal
-description: Capture a goal from the current conversation context, refine it into a concise markdown file, and save it to knowledge-base/goals/. Use when the user wants to record a feature, objective, or intent as a goal, or mentions "set-goal" / "add a goal".
+description: Capture a goal from the current conversation context, refine it into a concise markdown file, and save it to .goals/. Use when the user wants to record a feature, objective, or intent as a goal, or mentions "set-goal" / "add a goal".
 trigger: /set-goal
 argument-hint: "[optional: brief description to anchor the goal]"
 ---
 
 # Set Goal
 
-Extract a goal from the current conversation, refine it, confirm with the user, and write it to `knowledge-base/goals/`.
+Extract a goal from the current conversation, refine it, confirm with the user, and write it to `.goals/`.
 
 ---
 
@@ -43,19 +43,25 @@ Does this look right? Adjust anything before I write the file.
 
 Wait for the user to confirm or correct. Apply any corrections. Re-present if changes are significant.
 
-## Phase 3 — Write
+## Phase 3 — Bootstrap `.goals/` if missing
 
-Once confirmed, write the file to `knowledge-base/goals/`.
+Check if `.goals/` exists at the project root.
+
+If it does **not** exist, run the `/goals-init` scaffold (Phases 2–4) before continuing, then tell the user: "`.goals/` bootstrapped. Consider running `/goals-init` on future projects to set this up in advance."
+
+## Phase 4 — Write
 
 ### Numbering
 
-Scan `knowledge-base/goals/` for the highest existing `GOAL-NNNN` number. Increment by one. If the folder doesn't exist, create it with a `README.md` (see template below) before writing the goal file.
+Scan `.goals/` for existing `GOAL-NNNN-*` directories. Find the highest existing number. Increment by one. Start at `GOAL-0001` if none exist.
 
-### File name
+### Directory name
 
-`GOAL-{NNNN}-{slug}.md` where slug is the title lowercased, spaces replaced with hyphens, punctuation stripped. Example: `GOAL-0003-support-csv-export.md`
+`GOAL-{NNNN}-{slug}` where slug is the title lowercased, spaces replaced with hyphens, punctuation stripped. Example: `GOAL-0003-support-csv-export`
 
-### Goal file template
+### `GOAL.md` — goal definition
+
+Write to `.goals/GOAL-{NNNN}-{slug}/GOAL.md`:
 
 ```md
 ---
@@ -86,20 +92,20 @@ status: open
 <!-- Optional: constraints, open questions, links to related goals or ADRs. -->
 ```
 
-### `knowledge-base/goals/README.md` (create only if folder is new)
+### `CONTEXT.md` — agent steering context
+
+Write to `.goals/GOAL-{NNNN}-{slug}/CONTEXT.md`:
 
 ```md
-# Goals
+# Context — {Title}
 
-High-level objectives — features, capabilities, improvements — that drive task creation.
+Agent context for GOAL-{NNNN}. Updated by /brief as decisions are made.
 
-Files: `GOAL-0001-slug.md`, `GOAL-0002-slug.md`, …
+## Language
 
-Status values: `open` | `in-progress` | `done` | `deferred` | `cancelled`
-
-See [GOAL-FORMAT.md](../agents/GOAL-FORMAT.md) for authoring guidance.
+<!-- Goal-specific terms, definitions, and avoid-lists added here. -->
 ```
 
-## Phase 4 — Close
+## Phase 5 — Close
 
-Tell the user the file path written. Ask if they want to break this goal into tasks now. If yes, use [TASK-FORMAT.md](../kb-init/TASK-FORMAT.md) to create tasks and populate the `## Tasks` section of the goal file with `TASK-NNNN` references.
+Tell the user the files written (`GOAL.md` and `CONTEXT.md`). Ask if they want to break this goal into tasks now with `/breakdown`.
