@@ -56,8 +56,10 @@ Assign a **Fibonacci story point estimate** to each task:
 | 2 | Small — clear path, minimal risk |
 | 3 | Medium — some decisions to make |
 | 5 | Large — non-trivial, some uncertainty |
-| 8 | Very large — significant uncertainty; consider splitting |
+| 8 | Very large — significant uncertainty; flag for `/task-breakdown` |
 | 13 | Too big — must be split before starting |
+
+Tasks estimated at **8 or more points** must be flagged in the confirmation table with a note: `⚠ Consider /task-breakdown TASK-NNNN after creation`
 
 ### Dependency analysis
 
