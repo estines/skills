@@ -1,6 +1,6 @@
 ---
 name: breakdown
-description: Break a goal into vertical-slice tasks with Fibonacci story point estimates. Checks ADRs, domain language, and user rules before decomposing. Use when the user wants to create tasks from a goal, mentions "breakdown", or types /breakdown.
+description: Break a goal into vertical-slice tasks with Fibonacci story point estimates. Checks ADRs, domain language, and user rules before decomposing. Assigns execution skills to each task, reusing existing skills where possible and creating new ones in .goals/skills/ when needed. Use when the user wants to create tasks from a goal, mentions "breakdown", or types /breakdown.
 trigger: /breakdown
 argument-hint: "[optional: GOAL-NNNN]"
 ---
@@ -13,14 +13,16 @@ Decompose a goal into vertical-slice tasks, informed by codebase constraints and
 
 ## Phase 1 — Identify the goal
 
-If an argument was passed (e.g., `/goal-breakdown GOAL-0003`), use that goal reference.
+If `.goals/` does not exist at the project root, stop: "`.goals/` not found. Run `/goals-init` first."
+
+If an argument was passed (e.g., `/breakdown GOAL-0003`), use that goal reference.
 
 If no argument was passed:
 - Scan the current conversation for a recently mentioned or created goal (`GOAL-NNNN`)
 - If exactly one goal is unambiguous, use it
 - If ambiguous or none found, ask: "Which goal should I break down? (e.g. GOAL-0001)"
 
-Locate the goal file at `knowledge-base/goals/GOAL-NNNN-slug.md`. Read it fully — title, description, why, acceptance criteria, and notes.
+Locate `.goals/GOAL-NNNN-slug/GOAL.md`. Read it fully — title, description, why, acceptance criteria, and notes.
 
 ---
 
@@ -28,8 +30,8 @@ Locate the goal file at `knowledge-base/goals/GOAL-NNNN-slug.md`. Read it fully 
 
 Before decomposing, read these sources in order. Stop reading a source early if it is absent.
 
-1. **`knowledge-base/adr/`** — scan all ADR files; note any decisions that constrain how this goal's work must be done
-2. **`knowledge-base/agents/CONTEXT.md`** — note canonical terms; tasks must use this language
+1. **`.goals/adr/`** — scan all ADR files; note any decisions that constrain how this goal's work must be done
+2. **`.goals/GOAL-NNNN-slug/CONTEXT.md`** — read the goal's agent context; note canonical terms, resolved decisions, and avoid-lists; tasks must use this language
 3. **`CLAUDE.md` and `.claude/rules/`** — note any user-set rules or constraints
 4. **Goal `## Notes` section** — explicit constraints the goal author recorded
 5. **Relevant source code** — only if the goal references a specific area; read just enough to understand current structure
@@ -110,20 +112,11 @@ Once confirmed:
 
 ### Locate or create the tasks folder
 
-Check if `knowledge-base/goals/GOAL-NNNN-slug/` exists as a directory.
-
-- If the goal currently exists as a **file** (`GOAL-NNNN-slug.md`), convert it:
-  1. Read the file contents
-  2. Create the directory `knowledge-base/goals/GOAL-NNNN-slug/`
-  3. Write the goal content to `knowledge-base/goals/GOAL-NNNN-slug/GOAL.md`
-  4. Delete the original flat file
-- If the directory already exists, the goal file is at `knowledge-base/goals/GOAL-NNNN-slug/GOAL.md`
-
-Create `knowledge-base/goals/GOAL-NNNN-slug/tasks/` if it does not exist.
+The goal file is at `.goals/GOAL-NNNN-slug/GOAL.md`. Create `.goals/GOAL-NNNN-slug/tasks/` if it does not exist.
 
 ### Task numbering
 
-Scan `knowledge-base/goals/GOAL-NNNN-slug/tasks/` for the highest existing `TASK-NNNN` number. Start from that number + 1. If the folder is new, start at `TASK-0001`.
+Scan `.goals/GOAL-NNNN-slug/tasks/` for the highest existing `TASK-NNNN` number. Start from that number + 1. If the folder is new, start at `TASK-0001`.
 
 ### Task file name
 
@@ -137,6 +130,7 @@ status: open
 story_points: {N}
 goal: GOAL-{NNNN}
 blocked_by: [TASK-{NNNN}, TASK-{NNNN}]   # omit this line entirely for sequence-1 tasks
+skills: [{slug}, {slug}]                  # omit if no skills assigned — populated in Phase 5b
 ---
 
 # {Task title}
@@ -159,9 +153,70 @@ Write one file per task.
 
 ---
 
+## Phase 5b — Assign skills to tasks
+
+After writing all task files, determine which skills each task needs. Do this for every task before moving to Phase 6.
+
+### Step 1 — Analyse the task type
+
+For each task, read its title, summary, and acceptance criteria. Classify it:
+
+- **Implementation task** — builds or modifies code; has testable outputs
+- **Documentation task** — writes or updates docs, READMEs, guides
+- **Infrastructure / ops task** — deploys, migrates, configures environment
+- **Research / design task** — investigates options, produces a decision or spec
+- **Other** — anything that doesn't fit the above
+
+### Step 2 — Check existing skills
+
+Check in this order. Stop at the first match.
+
+1. **Installed skills** — check `~/.claude/skills/` and the repo's own skill directories. Common mappings:
+   - Implementation task → `burn` (TDD red-green-refactor)
+   - Research / design task → `brief` or `grill-with-docs`
+   - Documentation task → no standard skill (may need a new one)
+   - Infrastructure task → no standard skill (may need a new one)
+
+2. **`.goals/skills/`** — scan for an existing custom skill whose name and description match the task type.
+
+### Step 3 — Assign or create
+
+For each task:
+
+**If an installed skill matches:**
+Add the installed skill's name as the slug directly in `skills:` frontmatter (e.g., `skills: [burn]`). No new file needed.
+
+**If a `.goals/skills/` skill matches:**
+Add its slug to `skills:`. No new file needed.
+
+**If no existing skill matches:**
+Create a new skill file at `.goals/skills/{slug}.md` using this template:
+
+```md
+---
+name: {slug}
+description: {one-line description of what this skill does}
+---
+
+# {Skill title}
+
+{Instructions for Claude on how to execute a task of this type.
+Be specific: what to read, what to produce, how to verify done.}
+```
+
+Name the file with a descriptive slug that captures the skill type, not the task (e.g., `deploy-to-staging.md`, not `task-0003.md`). The goal is reuse across future tasks.
+
+After creating, add the slug to the task's `skills:` frontmatter.
+
+### Step 4 — Update task files
+
+For each task that received skill assignments, rewrite the `skills:` frontmatter line with the resolved list. Omit the line entirely if no skills were assigned.
+
+---
+
 ## Phase 6 — Update the goal file
 
-Open `knowledge-base/goals/GOAL-NNNN-slug/GOAL.md`. Find the `## Tasks` section and replace the placeholder comment with a task list:
+Open `.goals/GOAL-NNNN-slug/GOAL.md`. Find the `## Tasks` section and replace the placeholder comment with a task list:
 
 ```markdown
 ## Tasks
@@ -180,10 +235,11 @@ Also update the goal's `status` frontmatter from `open` to `in-progress` if it w
 List every file written or updated. Tell the user:
 
 ```
-Created {N} tasks under knowledge-base/goals/GOAL-NNNN-slug/tasks/
+Created {N} tasks under .goals/GOAL-NNNN-slug/tasks/
 Updated GOAL.md with task references.
+{If new skills were created}: Created {M} skill(s) in .goals/skills/
 
 Pick up any Sequence 1 task to start:
-- knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-0001-slug.md
-- knowledge-base/goals/GOAL-NNNN-slug/tasks/TASK-0002-slug.md  (if also Sequence 1)
+- .goals/GOAL-NNNN-slug/tasks/TASK-0001-slug.md
+- .goals/GOAL-NNNN-slug/tasks/TASK-0002-slug.md  (if also Sequence 1)
 ```
