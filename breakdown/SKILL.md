@@ -192,21 +192,40 @@ Add the installed skill's name as the slug directly in `skills:` frontmatter (e.
 Add its slug to `skills:`. No new file needed.
 
 **If no existing skill matches:**
-Create a new skill file at `.goals/skills/{slug}.md` using this template:
+Create a new skill file at `.goals/skills/{slug}.md`. Name the file with a descriptive slug that captures the role type, not the task (e.g., `db-migration.md`, `api-scaffolder.md`, `docs-writer.md`). The goal is reuse across future tasks.
+
+The skill body will be used verbatim as the `## Your job` section when burn's orchestrator spawns an agent for this task. Write it as direct instructions to that agent — concrete, step-by-step, specific to the task type. Synthesise the body from the task file, CONTEXT.md canonical terms, and any relevant ADR constraints you loaded in Phase 2. Do not write a placeholder or stub.
+
+Use this file template:
 
 ```md
 ---
 name: {slug}
-description: {one-line description of what this skill does}
+description: {one-line description of the role this skill plays}
 ---
 
-# {Skill title}
+# {Role title}
 
-{Instructions for Claude on how to execute a task of this type.
-Be specific: what to read, what to produce, how to verify done.}
+## Role
+
+{One sentence: what kind of task this agent executes and what it produces.}
+
+## Steps
+
+{Numbered steps for this task type. Be concrete:
+- what to read before starting
+- what to build or write
+- how to verify the output is correct
+- what "done" looks like
+
+Reference canonical terms from CONTEXT.md and any ADR constraints.
+Include a red-green-refactor loop only if the task type warrants TDD.}
+
+## Done criteria
+
+- [ ] {Observable outcome that signals this task is complete}
+- [ ] {Observable outcome}
 ```
-
-Name the file with a descriptive slug that captures the skill type, not the task (e.g., `deploy-to-staging.md`, not `task-0003.md`). The goal is reuse across future tasks.
 
 After creating, add the slug to the task's `skills:` frontmatter.
 
