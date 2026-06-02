@@ -47,6 +47,7 @@ Using the goal's acceptance criteria as the decomposition target, produce a set 
 - Each task is a **vertical slice** — it delivers an observable, testable outcome end-to-end (not a layer, not a subtask)
 - Each task is independently reviewable and can receive feedback on its own
 - A goal typically produces 2–8 tasks; if more than 8 are needed, note that the goal may need splitting
+- **Acceptance criteria must be test-backed** — each criterion must map to a runnable test command the Verify gate will execute (e.g., `go test ./internal/pipeline/...`), not just "you can observe X"
 
 Assign a **Fibonacci story point estimate** to each task:
 
@@ -132,7 +133,6 @@ status: open
 story_points: {N}
 goal: GOAL-{NNNN}
 blocked_by: [TASK-{NNNN}, TASK-{NNNN}]   # omit this line entirely for sequence-1 tasks
-skills: [{slug}, {slug}]                  # omit if no skills assigned — populated in Phase 5b
 ---
 
 # {Task title}
@@ -143,95 +143,37 @@ skills: [{slug}, {slug}]                  # omit if no skills assigned — popul
 
 ## Acceptance criteria
 
-- [ ] {Observable, testable outcome}
-- [ ] {Observable, testable outcome}
+- [ ] `{test command}` passes — {what this test covers}
+- [ ] `{test command}` passes — {what this test covers}
 
 ## Notes
 
-{Relevant constraints from ADRs, rules, or domain language that shaped this task. Omit section if nothing applies.}
+{Inline all relevant constraints from ADRs, domain terms from CONTEXT.md, and codebase rules that apply to this task. Do not reference external documents — the pipeline agent only sees this file. Omit section if nothing applies.}
 ```
 
 Write one file per task.
 
 ---
 
-## Phase 5b — Assign skills to tasks
+## Phase 5b — Task execution routing
 
-After writing all task files, determine which skills each task needs. Do this for every task before moving to Phase 6.
+Tasks in this project are executed by `pingo pipeline`, not `/burn`. The pipeline is invoked directly via `run-tasks.sh` as:
 
-### Step 1 — Analyse the task type
-
-For each task, read its title, summary, and acceptance criteria. Classify it:
-
-- **Implementation task** — builds or modifies code; has testable outputs
-- **Documentation task** — writes or updates docs, READMEs, guides
-- **Infrastructure / ops task** — deploys, migrates, configures environment
-- **Research / design task** — investigates options, produces a decision or spec
-- **Other** — anything that doesn't fit the above
-
-### Step 2 — Check existing skills
-
-Check in this order. Stop at the first match.
-
-1. **Installed skills** — check `~/.claude/skills/` and the repo's own skill directories. Common mappings:
-   - Implementation task → `burn` (TDD red-green-refactor)
-   - Research / design task → `brief` or `grill-with-docs`
-   - Documentation task → no standard skill (may need a new one)
-   - Infrastructure task → no standard skill (may need a new one)
-
-2. **`.goals/skills/`** — scan for an existing custom skill whose name and description match the task type.
-
-### Step 3 — Assign or create
-
-For each task:
-
-**If an installed skill matches:**
-Add the installed skill's name as the slug directly in `skills:` frontmatter (e.g., `skills: [burn]`). No new file needed.
-
-**If a `.goals/skills/` skill matches:**
-Add its slug to `skills:`. No new file needed.
-
-**If no existing skill matches:**
-Create a new skill file at `.goals/skills/{slug}.md`. Name the file with a descriptive slug that captures the role type, not the task (e.g., `db-migration.md`, `api-scaffolder.md`, `docs-writer.md`). The goal is reuse across future tasks.
-
-The skill body will be used verbatim as the `## Your job` section when burn's orchestrator spawns an agent for this task. Write it as direct instructions to that agent — concrete, step-by-step, specific to the task type. Synthesise the body from the task file, CONTEXT.md canonical terms, and any relevant ADR constraints you loaded in Phase 2. Do not write a placeholder or stub.
-
-Use this file template:
-
-```md
----
-name: {slug}
-description: {one-line description of the role this skill plays}
----
-
-# {Role title}
-
-## Role
-
-{One sentence: what kind of task this agent executes and what it produces.}
-
-## Steps
-
-{Numbered steps for this task type. Be concrete:
-- what to read before starting
-- what to build or write
-- how to verify the output is correct
-- what "done" looks like
-
-Reference canonical terms from CONTEXT.md and any ADR constraints.
-Include a red-green-refactor loop only if the task type warrants TDD.}
-
-## Done criteria
-
-- [ ] {Observable outcome that signals this task is complete}
-- [ ] {Observable outcome}
+```
+pingo pipeline --task <task-file-path>
 ```
 
-After creating, add the slug to the task's `skills:` frontmatter.
+**Do not assign a `skills:` frontmatter field** to implementation tasks. The pipeline does not use the skills mechanism. Omit `skills:` from the task frontmatter entirely unless the task is non-implementation (research, docs, infra) and requires a specific Claude slash command.
 
-### Step 4 — Update task files
+For non-implementation tasks only, classify and assign as follows:
 
-For each task that received skill assignments, rewrite the `skills:` frontmatter line with the resolved list. Omit the line entirely if no skills were assigned.
+| Task type | Assigned skill |
+|-----------|---------------|
+| Research / design | `brief` or `grill-with-docs` |
+| Documentation | none (omit `skills:`) |
+| Infrastructure / ops | none (omit `skills:`) |
+
+No new `.goals/skills/` files need to be created for implementation tasks.
 
 ---
 

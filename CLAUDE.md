@@ -36,7 +36,7 @@ The markdown body contains the skill's execution instructions — phases, decisi
 | `brief` | `/brief` | Grills a plan against a goal's CONTEXT.md and ADRs |
 | `breakdown` | `/breakdown` | Decomposes a goal into Fibonacci-estimated tasks |
 | `task-breakdown` | `/task-breakdown` | Splits an 8+ point task into sub-tasks |
-| `burn` | `/burn` | Executes tasks with TDD — `/burn GOAL-NNNN` runs all tasks in parallel batches by sequence (isolated worktrees); `/burn TASK-NNNN` runs a single task interactively |
+| `burn` | `/burn` | Executes tasks with TDD — `/burn GOAL-NNNN` runs parallel batches via Virtual Branching (Task subagents + merge); resumable orchestrator state; `/burn TASK-NNNN` runs a single task interactively |
 | `kb-init` | `/kb-init` | Scaffolds `knowledge-base/` from codebase |
 | `kb-update` | `/kb-update` | Fills or refreshes a knowledge-base section |
 
