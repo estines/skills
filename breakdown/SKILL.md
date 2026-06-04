@@ -127,29 +127,93 @@ Scan `.goals/GOAL-NNNN-slug/tasks/` for the highest existing `TASK-NNNN` number.
 
 ### Task file template
 
+Use the **minimal form** for simple, well-scoped tasks. Use the **full form** when the task touches a specific package, has non-obvious edge cases, or has previously failed a coverage gate.
+
+**Minimal form:**
+
 ```md
 ---
 status: open
+goal: GOAL-{NNNN}-{slug}
 story_points: {N}
-goal: GOAL-{NNNN}
 blocked_by: [TASK-{NNNN}, TASK-{NNNN}]   # omit this line entirely for sequence-1 tasks
 ---
 
-# {Task title}
+# {Short imperative title — verb + noun}
 
 ## Summary
 
-{2–4 sentences: what needs to be done, why, and what it delivers.}
+One or two sentences: what problem this solves and why it belongs here.
+Omit if the title is already self-explanatory.
 
 ## Acceptance criteria
 
-- [ ] `{test command}` passes — {what this test covers}
-- [ ] `{test command}` passes — {what this test covers}
+- [ ] {One observable, testable behaviour — not an implementation step}
+- [ ] {Another criterion}
 
 ## Notes
 
-{Inline all relevant constraints from ADRs, domain terms from CONTEXT.md, and codebase rules that apply to this task. Do not reference external documents — the pipeline agent only sees this file. Omit section if nothing applies.}
+- {Hard constraint: stdlib only, no globals, nil-safe, etc.}
+- {Default values or edge-case rules the agent must honour}
 ```
+
+**Full form** (add these two frontmatter fields and the `## Test spec` section):
+
+```md
+---
+status: open
+goal: GOAL-{NNNN}-{slug}
+story_points: {N}
+test_cmd: go test ./internal/{pkg}/... -count=1
+coverage_cmd: go test ./internal/{pkg}/... -cover -count=1
+blocked_by: [TASK-{NNNN}, TASK-{NNNN}]   # omit for sequence-1 tasks
+---
+
+# {Short imperative title}
+
+## Summary
+
+One or two sentences: what problem this solves and why it belongs here.
+
+## Acceptance criteria
+
+- [ ] {Criterion 1 — one testable behaviour}
+- [ ] {Criterion 2}
+- [ ] {Criterion 3}
+
+## Notes
+
+- {Hard constraint, e.g. stdlib only (`time`, `sync`) — no external deps}
+- {Default value, e.g. default rate: 1 token/second}
+- {Edge-case rule, e.g. zero or negative N disables limiting (treated as nil)}
+
+## Test spec
+
+| Criterion | Required test cases |
+|-----------|---------------------|
+| {Criterion 1 short label} | `Test{Type}_{behaviour}`, `Test{Type}_{edgeCase}` |
+| {Criterion 2 short label} | `Test{Type}_{behaviour}` |
+| {Notes constraint label}  | `Test{Type}_{constraint}` |
+```
+
+**When to use `test_cmd` / `coverage_cmd`:** any task touching a specific package. Without them the implement agent chooses scope; wrong scope is the most common non-code failure.
+
+**When to include `## Test spec`:**
+- Acceptance criteria have non-obvious edge cases (zero/negative values, nil inputs, concurrency)
+- You want guaranteed coverage completeness without relying on agent discretion
+- The task has previously failed the coverage gate
+
+**Acceptance criteria rules:**
+- Use `- [ ]` bullets (GitHub task list syntax)
+- Each bullet is one observable, testable behaviour — not an implementation step
+- Wrong: `- [ ] Create a RateLimiter struct with a mutex field`
+- Right: `` - [ ] `Allow()` returns false when the token bucket is empty ``
+
+**Notes rules:**
+- Inline all relevant constraints from ADRs, domain terms from CONTEXT.md, and codebase rules
+- Use bullet points, one constraint per line
+- Do not reference external documents — the pipeline agent only sees this file
+- Omit section if nothing applies
 
 Write one file per task.
 
